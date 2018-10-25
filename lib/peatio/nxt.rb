@@ -1,7 +1,10 @@
-require "peatio/nxt/version"
+require 'peatio/services/blockchain_service/nxt'
+require 'peatio/services/wallet_service/nxt'
+require 'peatio/client/blockchain_client/nxt'
+require 'peatio/client/wallet_client/nxt'
 
 module Peatio
   module Nxt
-    # Your code goes here...
+    require "peatio/nxt/version"
   end
 end
