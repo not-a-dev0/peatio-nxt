@@ -52,7 +52,7 @@ module WalletService
         Wallet
             .active
             .withdraw
-            .find_by(currency_id: :nxt, kind: :hot)
+            .find_by(currency_id: :nxt, kind: :fee)
       end
 
       def collect_coin_deposit(deposit, destination_address, options={})
