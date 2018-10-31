@@ -31,7 +31,7 @@ module WalletClient
               secretPhrase: issuer.fetch(:secret),
               recipient:    normalize_address(recipient.fetch(:address)),
               units:        amount,
-              deadline:     60,
+              deadline:     rand(1000..1440),
               feeNQT:       options.has_key?(:feeNQT) ? options[:feeNQT] : 0,
               broadcast:    options.has_key?(:broadcast) ? options[:broadcast] : true
           }
@@ -48,7 +48,7 @@ module WalletClient
               secretPhrase: issuer.fetch(:secret),
               recipient:    normalize_address(recipient.fetch(:address)),
               quantityQNT:  amount,
-              deadline:     60,
+              deadline:     rand(1000..1440),
               feeNQT:       options.has_key?(:feeNQT) ? options[:feeNQT] : 0,
               broadcast:    options.has_key?(:broadcast) ? options[:broadcast] : true
           }
@@ -105,7 +105,7 @@ module WalletClient
               secretPhrase: issuer.fetch(:secret),
               recipient:    normalize_address(recipient.fetch(:address)),
               amountNQT:    amount,
-              deadline:     60,
+              deadline:     rand(1000..1440),
               feeNQT:       options.has_key?(:feeNQT) ? options[:feeNQT] : 0,
               broadcast:    options.has_key?(:broadcast) ? options[:broadcast] : true
           }
