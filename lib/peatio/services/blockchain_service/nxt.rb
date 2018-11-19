@@ -32,11 +32,38 @@ module BlockchainService
 
         save_block(block_data, latest_block)
 
+        # process phased txns
+        process_phasing_txns
+
         Rails.logger.info { "Finished processing #{blockchain.key} block number #{block_id}." }
       end
     rescue => e
       report_exception(e)
       Rails.logger.info { "Exception was raised during block processing." }
+    end
+
+    protected
+
+    def update_or_create_deposits!(deposits)
+      deposits.each do |deposit_hash|
+        # If deposit doesn't exist create it.
+        deposit = Deposits::Coin
+                      .where(currency: currencies)
+                      .find_or_create_by!(deposit_hash.slice(:txid)) do |deposit|
+          deposit.assign_attributes(deposit_hash.except(:options))
+        end
+
+        deposit.update_column(:block_number, deposit_hash.fetch(:block_number))
+
+        if deposit.confirmations >= blockchain.min_confirmations
+          if deposit_hash[:options][:phased]
+            deposit.pending!
+          else
+            deposit.accept!
+            deposit.collect!
+          end
+        end
+      end
     end
 
     private
@@ -68,7 +95,9 @@ module BlockchainService
                           member:         payment_address.account.member,
                           currency:       payment_address.currency,
                           txout:          i,
-                          block_number:   deposit_txs[:block_number] }
+                          block_number:   deposit_txs[:block_number],
+                          options:        deposit_txs[:options]
+                        }
           end
         end
       end
@@ -111,6 +140,25 @@ module BlockchainService
 
       # Store processed tx ids from mempool.
       Rails.cache.write("processed_#{self.class.name.underscore}_mempool_txids", txns)
+    end
+
+    def process_phasing_txns
+      Deposits::Coin.where(currency: currencies) \
+                    .pending.each do |deposit|
+
+        # approved = true, false or nil
+        approved = client.get_phasing_poll(deposit.txid)
+
+        case approved
+        when true
+          deposit.accept!
+          deposit.collect!
+        when false
+          deposit.reject!
+        else
+          next
+        end
+      end
     end
   end
 end
