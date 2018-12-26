@@ -17,6 +17,28 @@ module WalletClient
       }
     end
 
+    def load_balance!(address, currency)
+      if currency.is_token_asset?
+        json_rpc({
+                     requestType: 'getAccountAssets',
+                     account: normalize_address(address),
+                     asset: currency.token_asset_id})
+            .fetch('quantityQNT')
+            .yield_self { |amount| convert_from_base_unit(amount) }
+      elsif currency.is_token_currency?
+        json_rpc({
+                     requestType: 'getAccountCurrencies',
+                     account: normalize_address(address),
+                     asset: currency.token_currency_id})
+            .fetch('quantityQNT')
+            .yield_self { |amount| convert_from_base_unit(amount) }
+      else
+        json_rpc({requestType: 'getBalance', account: normalize_address(address)})
+            .fetch('unconfirmedBalanceNQT')
+            .yield_self { |amount| convert_from_base_unit(amount) }
+      end
+    end
+
     def create_coin_withdrawal!(issuer, recipient, amount, options = {})
       withdrawal_request(issuer, recipient, amount, options).fetch('transactionJSON').yield_self do |txn|
         normalize_txid(txn['transaction'])

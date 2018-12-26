@@ -19,6 +19,28 @@ module BlockchainClient
       end
     end
 
+    def load_balance!(address, currency)
+      if currency.is_token_asset?
+        json_rpc({
+                     requestType: 'getAccountAssets',
+                     account: normalize_address(address),
+                     asset: currency.token_asset_id})
+            .fetch('quantityQNT')
+            .yield_self { |amount| convert_from_base_unit(amount, currency) }
+      elsif currency.is_token_currency?
+        json_rpc({
+                     requestType: 'getAccountCurrencies',
+                     account: normalize_address(address),
+                     asset: currency.token_currency_id})
+            .fetch('quantityQNT')
+            .yield_self { |amount| convert_from_base_unit(amount, currency) }
+      else
+        json_rpc({requestType: 'getBalance', account: normalize_address(address)})
+            .fetch('unconfirmedBalanceNQT')
+            .yield_self { |amount| convert_from_base_unit(amount, currency) }
+      end
+    end
+
     def get_block(block_hash)
       json_rpc({requestType: 'getBlock', block: block_hash, includeTransactions: true})
     end
